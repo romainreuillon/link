@@ -46,6 +46,8 @@ object Vote extends js.JSApp {
 
   def main(): Unit = {
 
+    println("C'est parti")
+
     val v = Var { "Hello world "}
 
 //    js.Dynamic.global.requirejs(
