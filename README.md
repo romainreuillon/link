@@ -10,7 +10,7 @@ cd docker
 docker-compose up
 ```
 
-Now you can connect you browser to http://localhost:7000.
+Now you can browse http://localhost:7000.
 
 Enjoy !
 
