@@ -1,0 +1,21 @@
+
+#!/bin/bash 
+
+PASSWORD="/root/.ethereum/password"
+
+if [ ! -f $PASSWORD ]
+then
+  echo pwgen -1 >$PASSWORD
+fi
+
+
+if [[ `geth account list | wc -l` < 1 ]];
+then
+  geth account new --password $PASSWORD
+fi
+
+
+geth --rinkeby --syncmode light --password $PASSWORD --rpc --rpccorsdomain "*"
+#geth --testnet --password $PASSWORD 
+
+

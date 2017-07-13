@@ -1,0 +1,13 @@
+version: "3.3"
+services:
+  geth:
+    build: ./geth
+    volumes:
+      - "./data/ethereum:/root/.ethereum"
+    network_mode: "host"
+  http: 
+    build: ./http
+    volumes:  
+      - "./data/site:/usr/local/apache2/htdocs"
+    ports:
+      - 7000:80

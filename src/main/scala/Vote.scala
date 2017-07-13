@@ -20,35 +20,58 @@ package vote.webapp
 
 import scala.scalajs.js
 import org.scalajs.dom
-import dom.document
-import upickle.default._
 
 import scalatags.JsDom.all._
 import rx._
 import RxWrap._
-import org.scalajs.dom.crypto.Crypto
-import org.scalajs.dom.raw._
 
 object Vote extends js.JSApp {
+//
+//  @js.native
+//  trait Transaction extends js.Object {
+//    def verifySignature(): Boolean = js.native
+//    def sign(privateKey: js.Array[Int]): Unit = js.native
+//    def serialize(): js.Array[Int] = js.native
+//  }
+//
+//  @js.native
+//  trait Wallet extends js.Object {
+//    def getAddressString(): String = js.native
+//    def getPrivateKey(): js.Array[Int] = js.native
+//  }
 
   @js.native
-  trait Transaction extends js.Object {
-    def verifySignature(): Boolean = js.native
-    def sign(privateKey: js.Array[Int]): Unit = js.native
-    def serialize(): js.Array[Int] = js.native
+  trait HttpProvider extends js.Object {
+
   }
 
   @js.native
-  trait Wallet extends js.Object {
-    def getAddressString(): String = js.native
-    def getPrivateKey(): js.Array[Int] = js.native
+  trait Web3 extends js.Object {
+    def setProvider(provider: HttpProvider): Unit
+    def providers: Providers
+    def eth: Eth
   }
+
+  @js.native
+  trait Providers extends js.Object {
+    def HttpProvider: js.Dynamic = js.native
+  }
+
+  @js.native
+  trait Eth extends js.Object {
+    def getBalance(address: String): BigNumber
+  }
+
+  @js.native
+  trait BigNumber extends js.Object {
+    def toNumber(): Double
+    def toString(l: Int): String
+  }
+
 
   def main(): Unit = {
 
-    println("C'est parti")
-
-    val v = Var { "Hello world "}
+    val v = Var { "NA"}
 
 //    js.Dynamic.global.requirejs(
 //      js.Array("./ethereumjs-tx"),
@@ -68,50 +91,82 @@ object Vote extends js.JSApp {
 //      }
 //    )
 
-    def load(wallet: String, password: String) = {
-      println(js.typeOf(js.Dynamic.global.mist))
-      js.Dynamic.global.requirejs(
-        js.Array("./ethereumjs-wallet", "ethereumjs-tx"),
-        (nsW: js.Dynamic, nsTx: js.Dynamic) => {
-          val w = nsW.Wallet.fromV3(wallet, password).asInstanceOf[Wallet]
+//    def load(wallet: String, password: String) = {
+//      println(js.typeOf(js.Dynamic.global.mist))
+//      js.Dynamic.global.requirejs(
+//        js.Array("./ethereumjs-wallet", "ethereumjs-tx"),
+//        (nsW: js.Dynamic, nsTx: js.Dynamic) => {
+//          val w = nsW.Wallet.fromV3(wallet, password).asInstanceOf[Wallet]
+//
+//          val rawTx = js.Dictionary(
+//             "nonce" -> "0x00",
+//             "gasPrice" -> "0x09184e72a000",
+//             "gasLimit" -> "0x2710",
+//             "to" -> "0x0000000000000000000000000000000000000000",
+//             "value" -> "0x00",
+//             "data" -> "0x7f7465737432000000000000000000000000000000000000000000000000000000600057"
+//          )
+//
+//          val tx = js.Dynamic.newInstance(nsTx.Tx)(rawTx).asInstanceOf[Transaction]
+//          tx.sign(w.getPrivateKey)
+//
+//          println(tx.serialize().mkString)
+//         // v() = w.getPrivateKey()
+//        }
+//      )
+//    }
 
-          val rawTx = js.Dictionary(
-             "nonce" -> "0x00",
-             "gasPrice" -> "0x09184e72a000",
-             "gasLimit" -> "0x2710",
-             "to" -> "0x0000000000000000000000000000000000000000",
-             "value" -> "0x00",
-             "data" -> "0x7f7465737432000000000000000000000000000000000000000000000000000000600057"
-          )
 
-          val tx = js.Dynamic.newInstance(nsTx.Tx)(rawTx).asInstanceOf[Transaction]
-          tx.sign(w.getPrivateKey)
+    def queryWeb3 = () => {
+//     js.Dynamic.global.requirejs(js.Array("./web3.js"),
+//        (nsWeb3: js.Dynamic) =>
+//          println(nsWeb3)
+//          //println(js.Dynamic.global.web3)
+//     )
 
-          println(tx.serialize().mkString)
-         // v() = w.getPrivateKey()
-        }
-      )
+      val web3 = js.Dynamic.newInstance(js.Dynamic.global.Web3)().asInstanceOf[Web3]
+      val provider = js.Dynamic.newInstance(web3.providers.HttpProvider)("http://localhost:8545").asInstanceOf[HttpProvider]
+      web3.setProvider(provider)
+
+      val add = "0xd60Ae6392E6F2Dd52a7B6A610fEB4385ea7E14Cc"
+
+      val balance = web3.eth.getBalance(add).toNumber() / 1e18
+
+      v() = s"$balance RETH"
+
+     // println(js.Dynamic.newInstance(js.Dynamic.global.Web3.providers.HttpProvider)("http://localhost:8545"))
+      //println(js.Dynamic.global.web3.currentProvider)
+         // println(js.Dynamic.newInstance(js.Dynamic.global.web3.providers.HttpProvider)("http://localhost:8545"))
+          //println(js.Dynamic.newInstance(nsWeb3.web3.providers.HttpProvider)("http://localhost:8545")))
+//          new web3.providers.HttpProvider("http://localhost:8545")
+//
     }
 
-    val uploadWallet = input(`type`:="file", id := "fileInput", accept := ".json").render
-    val password = input(`type`:="password").render
+//    val uploadWallet = input(`type`:="file", id := "fileInput", accept := ".json").render
+//    val password = input(`type`:="password").render
 
-    val loadWallet = (e: Event) => {
-      val reader = new dom.FileReader()
-      reader.readAsText(uploadWallet.files.item(0))
-      reader.onloadend =
-        (e: ProgressEvent) => {
-          load(reader.result.asInstanceOf[String], password.value)
-          // v() = read[Wallet](reader.result.asInstanceOf[String]).toString
-        }
-    }
+//    val loadWallet = (e: Event) => {
+//      val reader = new dom.FileReader()
+//      reader.readAsText(uploadWallet.files.item(0))
+//      reader.onloadend =
+//        (e: ProgressEvent) => {
+//          load(reader.result.asInstanceOf[String], password.value)
+//          // v() = read[Wallet](reader.result.asInstanceOf[String]).toString
+//        }
+//    }
+//
+//    uploadWallet.onchange = loadWallet
+//    password.onkeyup = loadWallet
 
-    uploadWallet.onchange = loadWallet
-    password.onkeyup = loadWallet
+    val b = button("Query", onclick := queryWeb3)
 
-
-    dom.document.body.appendChild(div(uploadWallet, password, br(), u(Rx(v()))).render)
-
+//    dom.document.body.appendChild(div(uploadWallet, password, br(), u(Rx(v()))).render)
+    dom.document.body.appendChild(
+      div(
+        b, br(),
+        "balance: ", Rx(v())
+      ).render
+    )
 
   }
 }
