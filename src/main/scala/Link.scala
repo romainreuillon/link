@@ -25,7 +25,7 @@ import scalatags.JsDom.all._
 import rx._
 import RxWrap._
 
-object Vote extends js.JSApp {
+object Link extends js.JSApp {
 //
 //  @js.native
 //  trait Transaction extends js.Object {
