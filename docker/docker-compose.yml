@@ -8,6 +8,6 @@ services:
   http: 
     build: ./http
     volumes:  
-      - "./data/site:/usr/local/apache2/htdocs"
+      - "./site:/usr/local/apache2/htdocs"
     ports:
       - 7000:80
