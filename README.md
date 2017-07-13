@@ -14,3 +14,5 @@ Now you can connect you browser to http://localhost:7000.
 
 Enjoy !
 
+PS: you might want to wait a bit before the geth light client gets fully synchronised, otherwise the balance will be 0.
+
