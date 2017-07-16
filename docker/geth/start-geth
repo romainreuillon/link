@@ -15,7 +15,7 @@ then
 fi
 
 
-geth --rinkeby --syncmode light --password $PASSWORD --rpc --rpccorsdomain "*"
+geth --rinkeby --syncmode light --password $PASSWORD --rpc --rpcapi 'web3,eth,debug' --rpccorsdomain "*"
 #geth --testnet --password $PASSWORD 
 
 

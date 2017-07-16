@@ -25,6 +25,8 @@ import scalatags.JsDom.all._
 import rx._
 import RxWrap._
 
+import scala.scalajs.js.annotation.JSGlobal
+
 object Link extends js.JSApp {
 //
 //  @js.native
@@ -60,6 +62,7 @@ object Link extends js.JSApp {
   @js.native
   trait Eth extends js.Object {
     def getBalance(address: String): BigNumber
+    def contract(abi: js.Dynamic): js.Dynamic
   }
 
   @js.native
@@ -69,11 +72,18 @@ object Link extends js.JSApp {
   }
 
 
-  def main(): Unit = {
 
-    val v = Var { "NA"}
+    def main(): Unit = {
 
-//    js.Dynamic.global.requirejs(
+    val contractABI =
+      js.JSON.parse("""[{"constant":false,"inputs":[],"name":"getNb","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[],"name":"propose","outputs":[{"name":"","type":"bool"}],"payable":false,"type":"function"},{"inputs":[],"payable":false,"type":"constructor"}]""")
+
+
+    val balanceValue = Var { "NA"}
+    val contactValue = Var { "NA" }
+
+
+    //    js.Dynamic.global.requirejs(
 //      js.Array("./ethereumjs-tx"),
 //      (ns: js.Dynamic) => {
 //        val rawTx = js.Array(
@@ -117,29 +127,30 @@ object Link extends js.JSApp {
 //    }
 
 
-    def queryWeb3 = () => {
+    def web3 = {
+      val web3 = js.Dynamic.newInstance(js.Dynamic.global.Web3)().asInstanceOf[Web3]
+      val provider = js.Dynamic.newInstance(web3.providers.HttpProvider)("http://localhost:8545").asInstanceOf[HttpProvider]
+      web3.setProvider(provider)
+      web3
+    }
+
+    def queryBalance = () => {
 //     js.Dynamic.global.requirejs(js.Array("./web3.js"),
 //        (nsWeb3: js.Dynamic) =>
 //          println(nsWeb3)
 //          //println(js.Dynamic.global.web3)
 //     )
 
-      val web3 = js.Dynamic.newInstance(js.Dynamic.global.Web3)().asInstanceOf[Web3]
-      val provider = js.Dynamic.newInstance(web3.providers.HttpProvider)("http://localhost:8545").asInstanceOf[HttpProvider]
-      web3.setProvider(provider)
 
-      val add = "0xd60Ae6392E6F2Dd52a7B6A610fEB4385ea7E14Cc"
-
+      val add = "0xFcA4C88f2E7C4567c0b7a40E0d5785800CD0C9de"
       val balance = web3.eth.getBalance(add).toNumber() / 1e18
+      balanceValue() = s"$balance RETH"
+    }
 
-      v() = s"$balance RETH"
 
-     // println(js.Dynamic.newInstance(js.Dynamic.global.Web3.providers.HttpProvider)("http://localhost:8545"))
-      //println(js.Dynamic.global.web3.currentProvider)
-         // println(js.Dynamic.newInstance(js.Dynamic.global.web3.providers.HttpProvider)("http://localhost:8545"))
-          //println(js.Dynamic.newInstance(nsWeb3.web3.providers.HttpProvider)("http://localhost:8545")))
-//          new web3.providers.HttpProvider("http://localhost:8545")
-//
+    def queryContract = () => {
+      val contract = web3.eth.contract(contractABI).at("0xae59f07cd8cb680db5d265359d6faa841570656b")
+      contactValue() = contract.getNb.call().toString
     }
 
 //    val uploadWallet = input(`type`:="file", id := "fileInput", accept := ".json").render
@@ -158,13 +169,17 @@ object Link extends js.JSApp {
 //    uploadWallet.onchange = loadWallet
 //    password.onkeyup = loadWallet
 
-    val b = button("Query", onclick := queryWeb3)
-
 //    dom.document.body.appendChild(div(uploadWallet, password, br(), u(Rx(v()))).render)
+
+    val balance = button("Query Balance", onclick := queryBalance)
+    val contract = button("Query Contract", onclick := queryContract)
+
     dom.document.body.appendChild(
       div(
-        b, br(),
-        "balance: ", Rx(v())
+        balance, br(),
+        "balance: ", Rx(balanceValue()), br(),
+        contract, br(),
+        "contract: ", Rx(contactValue()),
       ).render
     )
 
