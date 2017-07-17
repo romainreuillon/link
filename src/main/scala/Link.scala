@@ -24,8 +24,10 @@ import org.scalajs.dom
 
 import scalatags.JsDom.all._
 import rx._
-import RxWrap._
-
+import scaladget.api.{BootstrapTags=> bs}
+import scaladget.stylesheet.all._
+import bs._
+import scaladget.tools.JsRxTags._
 import scala.scalajs.js.annotation.{JSGlobal, JSName}
 
 object Link extends js.JSApp {
@@ -88,7 +90,7 @@ object Link extends js.JSApp {
 
   def main(): Unit = {
 //
-
+    implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
     val contractAddress = "0xae59f07cd8cb680db5d265359d6faa841570656b"
 //    val web3 = Var[Option[Web3]] {
 //      None
@@ -209,10 +211,13 @@ object Link extends js.JSApp {
 
       //    dom.document.body.appendChild(div(uploadWallet, password, br(), u(Rx(v()))).render)
 
+     val buttonStyle: ModifierSeq = Seq(
+      margin := 10
+    )
 
-      val balanceButton = button("Query Balance", onclick := queryBalance)
-      val contractButton = button("Query Contract", onclick := queryContract)
-      val proposeButton = button("Propose", onclick := callPropose)
+      val balanceButton = bs.button("Query Balance", buttonStyle +++ btn_primary)(onclick := queryBalance)
+      val contractButton = bs.button("Query Contract", buttonStyle +++ btn_primary)(onclick := queryContract)
+      val proposeButton = bs.button("Propose", buttonStyle +++ btn_primary)(onclick := callPropose)
 
       val errorMessage: Rx[String] = errorValue.map(_.map(_.message).getOrElse("No error"))
 

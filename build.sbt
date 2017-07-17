@@ -13,6 +13,7 @@ libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.2"
 libraryDependencies += "com.lihaoyi" %%% "scalarx" % "0.3.2"
 libraryDependencies += "com.lihaoyi" %%% "scalatags" % "0.6.5"
 libraryDependencies += "com.lihaoyi" %%% "upickle" % "0.4.4"
+libraryDependencies += "fr.iscpif" %%% "scaladget" % "0.9.4"
 
 //npmDevDependencies in Compile += "web3" -> "0.19.1"
 //webpackConfigFile in fastOptJS := Some(baseDirectory.value  / "webpack.config.js")
