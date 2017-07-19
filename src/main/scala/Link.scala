@@ -91,7 +91,11 @@ object Link extends js.JSApp {
   def main(): Unit = {
 //
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
-    val contractAddress = "0xae59f07cd8cb680db5d265359d6faa841570656b"
+    val contractAddress = "0xb9bf0533771e2015cca8562cd6548a90fe25e89d"
+
+    val proposeAddress = bs.input()(placeholder := "proposal ipfs adress", `type` := "text").render
+    val proposeBounty = bs.input()(placeholder := "bounty", `type` := "number").render
+
 //    val web3 = Var[Option[Web3]] {
 //      None
 //    }
@@ -115,9 +119,9 @@ object Link extends js.JSApp {
     })
 
     def startApp(web3: Web3) {
-
       val contractABI =
-        js.JSON.parse("""[{"constant":false,"inputs":[],"name":"getNb","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[],"name":"propose","outputs":[{"name":"","type":"bool"}],"payable":false,"type":"function"},{"inputs":[],"payable":false,"type":"constructor"}]""")
+        js.JSON.parse("""[{"constant":false,"inputs":[],"name":"getNb","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"proposal","type":"string"},{"name":"bounty","type":"uint256"}],"name":"propose","outputs":[],"payable":false,"type":"function"},{"inputs":[],"payable":false,"type":"constructor"}]""".stripMargin)
+
 
       val errorValue = Var[Option[Error]] { None }
       val balanceValue = Var { "NA" }
@@ -162,7 +166,7 @@ object Link extends js.JSApp {
       }
 
       def callPropose = () => {
-        val getData = contract.propose.getData()
+        val getData = contract.propose.getData(proposeAddress.value, proposeBounty.valueAsNumber)
         val transaction =
           js.Dictionary[js.Any](
             "to" -> contractAddress,
@@ -217,6 +221,13 @@ object Link extends js.JSApp {
 
       val balanceButton = bs.button("Query Balance", buttonStyle +++ btn_primary)(onclick := queryBalance)
       val contractButton = bs.button("Query Contract", buttonStyle +++ btn_primary)(onclick := queryContract)
+
+      val proposeForm =
+        bs.vForm(width := 400)(
+          proposeAddress.withLabel("IPFS address"),
+          proposeBounty.withLabel("Bounty")
+        )
+
       val proposeButton = bs.button("Propose", buttonStyle +++ btn_primary)(onclick := callPropose)
 
       val errorMessage: Rx[String] = errorValue.map(_.map(_.message).getOrElse("No error"))
@@ -225,7 +236,7 @@ object Link extends js.JSApp {
         div(
           balanceButton, "balance: ", Rx(balanceValue()), br(),
           contractButton, "number of contracts: ", Rx(contactValue()), br(),
-          proposeButton, br(),
+          proposeForm, proposeButton, br(),
           a(href := "https://rinkeby.etherscan.io/address/" + contractAddress, target := "_blank", "contract transactions"), br(),
           "Error: ", Rx(errorMessage())
         ).render

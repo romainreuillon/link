@@ -3,27 +3,24 @@ pragma solidity ^0.4.3;
 
 contract DataWards {
 
+  struct FundingProposal {
+  string proposal;
+  uint bounty;
+  }
 
-
-//  struct FundingProposal {
-//
-//  }
-//
-//  mapping(string => FundingProposal) fundingProposals;
-
-  uint nb = 0;
+  mapping(address => FundingProposal[]) fundingProposals;
 
   function DataWards(){
 
   }
 
-  function propose() Boolean {
-    nb += 1;
-    return true;
+  function propose(string proposal, uint bounty) {
+    fundingProposals[msg.sender].push(FundingProposal(proposal, bounty));
   }
 
-  function getNb() Int {
-    return nb;
+  function getNb() returns (uint) {
+    return fundingProposals[msg.sender].length;
   }
+
 
 }
