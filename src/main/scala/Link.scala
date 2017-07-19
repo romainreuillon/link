@@ -71,7 +71,14 @@ object Link extends js.JSApp {
     def contract(abi: js.Dynamic): js.Dynamic
     def accounts: js.Dynamic
     def getAccounts(callBack: CallBack[js.Array[js.Dynamic]])
-    def sendTransaction(transactionObject: js.Dictionary[js.Any], callBack: CallBack[String] = js.native): String
+    def sendTransaction(transactionObject: js.Dictionary[js.Any], callBack: CallBack[js.Dynamic] = js.native): js.Dynamic
+    def getBlock(id: String, callBack: CallBack[Block] = js.native): Block
+  }
+
+  @js.native
+  trait Block extends js.Object {
+    def hash: js.Dynamic
+    def number: Int
   }
 
   @js.native
@@ -91,7 +98,9 @@ object Link extends js.JSApp {
   def main(): Unit = {
 //
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
-    val contractAddress = "0xb9bf0533771e2015cca8562cd6548a90fe25e89d"
+    val contractAddress = "0xe7c8ad7d037ebcf4ca1410c9371c10cf55bcbc52"
+    val contractABI =
+      js.JSON.parse("""[{"constant":true,"inputs":[{"name":"proposal","type":"string"}],"name":"getBounty","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"getProposalSize","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"proposalAddress","type":"string"},{"name":"amount","type":"uint256"}],"name":"propose","outputs":[{"name":"inserted","type":"bool"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"idx","type":"uint256"}],"name":"getProposal","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"inputs":[],"payable":false,"type":"constructor"}]""")
 
     val proposeAddress = bs.input()(placeholder := "proposal ipfs adress", `type` := "text").render
     val proposeBounty = bs.input()(placeholder := "bounty", `type` := "number").render
@@ -119,13 +128,12 @@ object Link extends js.JSApp {
     })
 
     def startApp(web3: Web3) {
-      val contractABI =
-        js.JSON.parse("""[{"constant":false,"inputs":[],"name":"getNb","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"proposal","type":"string"},{"name":"bounty","type":"uint256"}],"name":"propose","outputs":[],"payable":false,"type":"function"},{"inputs":[],"payable":false,"type":"constructor"}]""".stripMargin)
-
-
       val errorValue = Var[Option[Error]] { None }
       val balanceValue = Var { "NA" }
-      val contactValue = Var { "NA" }
+
+      case class Proposal(address: String, bounty: String)
+
+      val proposalsValue = Var[Vector[Proposal]] { Vector.empty }
       val transactionValue = Var[Option[String]] { None }
 
       def defined[T](t: T) =
@@ -158,11 +166,32 @@ object Link extends js.JSApp {
 
 
       def queryContract = () => {
-        def setNbContract(error: js.Error, result: js.Dynamic) = logError(error) {
-         contactValue() = result.toString
+        proposalsValue() = Vector()
+
+        def forLastBlock(error: js.Error, block: Block) = logError(error) {
+          def defaultBlock = js.Dictionary[js.Any]("defaultBlock" -> block.hash)
+
+          def forEachProposal(error: js.Error, proposal: String)= logError(error) {
+            def addProposal(error: js.Error, bounty: js.Dynamic)= logError(error) {
+              proposalsValue.synchronized {
+                proposalsValue() = proposalsValue.now ++ Seq(Proposal(proposal.toString, bounty.toString))
+              }
+            }
+
+            contract.getBounty(proposal, defaultBlock, addProposal(_, _))
+          }
+
+          def forAllProposals(error: js.Error, numberOfProposals: js.Object) = logError(error) {
+            for { proposal <- 0L until BigInt(numberOfProposals.toString).longValue } {
+              contract.getProposal.call(proposal, defaultBlock, forEachProposal(_, _))
+
+            }
+          }
+
+          contract.getProposalSize.call(defaultBlock, forAllProposals(_, _))
         }
 
-        contract.getNb.call(setNbContract(_,_))
+        web3.eth.getBlock("latest", callBack = forLastBlock(_, _))
       }
 
       def callPropose = () => {
@@ -172,29 +201,12 @@ object Link extends js.JSApp {
             "to" -> contractAddress,
             "data" -> getData)
 
-        def proposeCallBack(error: Error, result: String) = logError(error) {
-          transactionValue() = Some(result)
+        def proposeCallBack(error: Error, result: js.Dynamic) = logError(error) {
+          transactionValue() = Some(result.toString)
         }
 
         web3.eth.sendTransaction(transaction, proposeCallBack(_, _))
 
-        //println(getData)
-        //finally paas this data parameter to send Transaction
-//        web3.eth.sendTransaction({to:address, from:organisationWallet, data: getData});
-//
-//
-//        web3.eth.sendTransaction(contract.propose)
-//        contract.propose()
-//        miniTokentoken.transfer(toAddress, value, { from: addr })
-//
-//          .then(function (txHash) {
-//            console.log('Transaction sent')
-//            console.dir(txHash)
-//
-//            waitForTxToBeMined(txHash)
-//          })
-//
-//        .catch(console.error)
       }
 
       //    val uploadWallet = input(`type`:="file", id := "fileInput", accept := ".json").render
@@ -216,11 +228,10 @@ object Link extends js.JSApp {
       //    dom.document.body.appendChild(div(uploadWallet, password, br(), u(Rx(v()))).render)
 
      val buttonStyle: ModifierSeq = Seq(
-      margin := 10
-    )
+       margin := 10
+      )
 
       val balanceButton = bs.button("Query Balance", buttonStyle +++ btn_primary)(onclick := queryBalance)
-      val contractButton = bs.button("Query Contract", buttonStyle +++ btn_primary)(onclick := queryContract)
 
       val proposeForm =
         bs.vForm(width := 400)(
@@ -229,14 +240,21 @@ object Link extends js.JSApp {
         )
 
       val proposeButton = bs.button("Propose", buttonStyle +++ btn_primary)(onclick := callPropose)
+      val listProposals = bs.button("List proposals", buttonStyle +++ btn_primary)(onclick := queryContract)
+
+      val proposalsText = Rx {
+        proposalsValue().map { proposal =>
+          div(a(href := s"https://ipfs.iscpif.fr/ipfs/${proposal.address}", target := "_blank", proposal.address), s": ${proposal.bounty} DWT", br())
+        }
+      }
 
       val errorMessage: Rx[String] = errorValue.map(_.map(_.message).getOrElse("No error"))
 
       dom.document.body.appendChild(
         div(
-          balanceButton, "balance: ", Rx(balanceValue()), br(),
-          contractButton, "number of contracts: ", Rx(contactValue()), br(),
+         // balanceButton, "balance: ", Rx(balanceValue()), br(),
           proposeForm, proposeButton, br(),
+          listProposals, br(), proposalsText, br(),
           a(href := "https://rinkeby.etherscan.io/address/" + contractAddress, target := "_blank", "contract transactions"), br(),
           "Error: ", Rx(errorMessage())
         ).render
