@@ -5,14 +5,14 @@ contract DataWards {
   function DataWards(){}
 
   struct proposal {
-  uint keyIndex;
-  uint bounty;
-  mapping(address => uint) funders;
+    uint keyIndex;
+    uint bounty;
+    mapping(address => uint) funders;
   }
 
   struct proposals {
-  string[] keys;
-  mapping(string => proposal) proposals;
+    string[] keys;
+    mapping(string => proposal) proposals;
   }
 
 
