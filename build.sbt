@@ -50,6 +50,7 @@ assemble := {
 
 //  IO.copyFile(wp, site / wp.getName )
 
+
   for {
     f <- resourceDir.listFiles()
   } {
