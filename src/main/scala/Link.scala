@@ -18,17 +18,21 @@
 
 package vote.webapp
 
+import jdk.nashorn.api.scripting.JSObject
+
 import scala.scalajs.js
 import scala.scalajs.js._
 import org.scalajs.dom
 
 import scalatags.JsDom.all._
 import rx._
-import scaladget.api.{BootstrapTags=> bs}
+
+import scaladget.api.{BootstrapTags => bs}
 import scaladget.stylesheet.all._
 import bs._
 import scaladget.tools.JsRxTags._
 import scala.scalajs.js.annotation.{JSGlobal, JSName}
+
 
 object Link extends js.JSApp {
 //
@@ -98,9 +102,20 @@ object Link extends js.JSApp {
   def main(): Unit = {
 //
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
-    val contractAddress = "0xe7c8ad7d037ebcf4ca1410c9371c10cf55bcbc52"
-    val contractABI =
-      js.JSON.parse("""[{"constant":true,"inputs":[{"name":"proposal","type":"string"}],"name":"getBounty","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"getProposalSize","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"proposalAddress","type":"string"},{"name":"amount","type":"uint256"}],"name":"propose","outputs":[{"name":"inserted","type":"bool"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"idx","type":"uint256"}],"name":"getProposal","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"inputs":[],"payable":false,"type":"constructor"}]""")
+
+
+//
+//    , (data: js.Dynamic) => {
+//      // Get the necessary contract artifact file and instantiate it with truffle-contract.
+//      var AdoptionArtifact = data;
+//      App.contracts.Adoption = TruffleContract(AdoptionArtifact);
+//
+//      // Set the provider for our contract.
+//      App.contracts.Adoption.setProvider(App.web3Provider);
+//
+//      // Use our contract to retieve and mark the adopted pets.
+//      return App.markAdopted();
+//    });
 
     val proposeAddress = bs.input()(placeholder := "proposal ipfs adress", `type` := "text").render
     val proposeBounty = bs.input()(placeholder := "bounty", `type` := "number").render
@@ -116,22 +131,34 @@ object Link extends js.JSApp {
 //      web3
 //    }
 
-    dom.window.addEventListener("load", (e: dom.Event) => {
+    dom.window.addEventListener("load", { (e: dom.Event) =>
+      js.Dynamic.global.fetch("DataWards.json").then((_: js.Dynamic).json()).then { (abi: js.Dynamic) =>
 
-      // Checking if Web3 has been injected by the browser (Mist/MetaMask)
-      if (js.typeOf(js.Dynamic.global.web3) != "undefined") {
-        startApp(js.Dynamic.global.web3.asInstanceOf[Web3])
-      } else {
-        val uport = new Connect("DataWards")
-        startApp(uport.getWeb3)
+        val contractAddress = {
+          val networks = abi.networks.asInstanceOf[js.Object]
+          val contractKey = js.Object.keys(networks).toVector.last
+          js.Object.getOwnPropertyDescriptor(networks, contractKey).value.asInstanceOf[js.Dynamic].address.toString
+        }
+
+        val contractABI = abi.abi
+
+        //js.JSON.parse("""[{"constant":true,"inputs":[{"name":"proposal","type":"string"}],"name":"getBounty","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"getProposalSize","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"proposalAddress","type":"string"},{"name":"amount","type":"uint256"}],"name":"propose","outputs":[{"name":"inserted","type":"bool"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"idx","type":"uint256"}],"name":"getProposal","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"inputs":[],"payable":false,"type":"constructor"}]""")
+
+        // Checking if Web3 has been injected by the browser (Mist/MetaMask)
+        if (js.typeOf(js.Dynamic.global.web3) != "undefined") {
+          startApp(js.Dynamic.global.web3.asInstanceOf[Web3], contractABI, contractAddress)
+        } else {
+          val uport = new Connect("DataWards")
+          startApp(uport.getWeb3, contractABI, contractAddress)
+        }
       }
     })
 
-    def startApp(web3: Web3) {
+    def startApp(web3: Web3, contractABI: js.Dynamic, contractAddress: String) {
       val errorValue = Var[Option[Error]] { None }
       val balanceValue = Var { "NA" }
 
-      case class Proposal(address: String, bounty: String)
+      case class Proposal(address: String, initator: String, bounty: String)
 
       val proposalsValue = Var[Vector[Proposal]] { Vector.empty }
       val transactionValue = Var[Option[String]] { None }
@@ -172,19 +199,22 @@ object Link extends js.JSApp {
           def defaultBlock = js.Dictionary[js.Any]("defaultBlock" -> block.hash)
 
           def forEachProposal(error: js.Error, proposal: String)= logError(error) {
-            def addProposal(error: js.Error, bounty: js.Dynamic)= logError(error) {
+
+            def addProposal(error: js.Error, ret: js.Object)= logError(error) {
+              val initiator = js.Object.getOwnPropertyDescriptor(ret, "0").value
+              val bounty = js.Object.getOwnPropertyDescriptor(ret, "1").value
+
               proposalsValue.synchronized {
-                proposalsValue() = proposalsValue.now ++ Seq(Proposal(proposal.toString, bounty.toString))
+                proposalsValue() = proposalsValue.now ++ Seq(Proposal(proposal.toString, initiator.toString, (BigInt(bounty.toString).toDouble / 1e18).toString))
               }
             }
 
-            contract.getBounty(proposal, defaultBlock, addProposal(_, _))
+            contract.getProposalInformation(proposal, defaultBlock, addProposal(_, _))
           }
 
           def forAllProposals(error: js.Error, numberOfProposals: js.Object) = logError(error) {
             for { proposal <- 0L until BigInt(numberOfProposals.toString).longValue } {
               contract.getProposal.call(proposal, defaultBlock, forEachProposal(_, _))
-
             }
           }
 
@@ -195,10 +225,14 @@ object Link extends js.JSApp {
       }
 
       def callPropose = () => {
-        val getData = contract.propose.getData(proposeAddress.value, proposeBounty.valueAsNumber)
+        val getData = contract.propose.getData(proposeAddress.value) //, proposeBounty.valueAsNumber)
+
+        val weis = (proposeBounty.value.toDouble * 1e18).toLong
+
         val transaction =
           js.Dictionary[js.Any](
             "to" -> contractAddress,
+            "value" -> weis,
             "data" -> getData)
 
         def proposeCallBack(error: Error, result: js.Dynamic) = logError(error) {
@@ -242,23 +276,35 @@ object Link extends js.JSApp {
       val proposeButton = bs.button("Propose", buttonStyle +++ btn_primary)(onclick := callPropose)
       val listProposals = bs.button("List proposals", buttonStyle +++ btn_primary)(onclick := queryContract)
 
+      //val currentProposal = Var[Option[String]](None)
+
       val proposalsText = Rx {
         proposalsValue().map { proposal =>
-          div(a(href := s"https://ipfs.iscpif.fr/ipfs/${proposal.address}", target := "_blank", proposal.address), s": ${proposal.bounty} DWT", br())
+          div(
+            a(href := s"https://ipfs.iscpif.fr/ipfs/${proposal.address}", target := "_blank", proposal.address),
+            s": ${proposal.bounty} ETH", s", ${proposal.initator}", bs.button("expand").expandOnclick(div("Youpi", width := 200)), br())
         }
       }
 
       val errorMessage: Rx[String] = errorValue.map(_.map(_.message).getOrElse("No error"))
 
-      dom.document.body.appendChild(
-        div(
-         // balanceButton, "balance: ", Rx(balanceValue()), br(),
-          proposeForm, proposeButton, br(),
-          listProposals, br(), proposalsText, br(),
-          a(href := "https://rinkeby.etherscan.io/address/" + contractAddress, target := "_blank", "contract transactions"), br(),
-          "Error: ", Rx(errorMessage())
-        ).render
-      )
+      val appTabs =
+        Tabs(pills).add(
+          "Funder",
+          div(
+            // balanceButton, "balance: ", Rx(balanceValue()), br(),
+            proposeForm, proposeButton, br(),
+            listProposals, br(), proposalsText, br(),
+
+            a(href := "https://rinkeby.etherscan.io/address/" + contractAddress, target := "_blank", "contract transactions"), br(),
+            "Error: ", Rx(errorMessage())
+          )
+        ).add("Producer", div("Coucou")).render
+
+
+      withBootstrapNative {
+        div(padding := "10px")(appTabs).render
+      }
 
     }
   }

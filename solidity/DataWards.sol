@@ -1,4 +1,4 @@
-pragma solidity ^0.4.3;
+pragma solidity ^0.4.15;
 
 contract DataWards {
 
@@ -7,7 +7,7 @@ contract DataWards {
   struct proposal {
     uint keyIndex;
     uint bounty;
-    mapping(address => uint) funders;
+    address initiator;
   }
 
   struct proposals {
@@ -15,15 +15,27 @@ contract DataWards {
     mapping(string => proposal) proposals;
   }
 
+//  struct response {
+//    uint keyIndex;
+//    uint stake;
+//    mapping(address => uint) funders;
+//    address attributed;
+//  }
+//
+//  struct proposals {
+//    string[] keys;
+//    mapping(string => proposal) proposals;
+//  }
 
-  //using itmap for itmap.itmap;
-  // Declare an iterable mapping
   proposals fundingProposals;
 
-  function propose(string proposalAddress, uint amount) returns (bool inserted) {
+  function propose(string proposalAddress) payable returns (bool inserted) {
+    assert(msg.value > 0);
+
     proposal storage p = fundingProposals.proposals[proposalAddress];
-    p.funders[msg.sender] += amount;
-    p.bounty += amount;
+
+    if(p.initiator == address(0)) p.initiator = msg.sender;
+    p.bounty += msg.value;
 
     if (p.keyIndex > 0) {
       return false;
@@ -42,8 +54,9 @@ contract DataWards {
     return fundingProposals.keys[idx];
   }
 
-  function getBounty(string proposal) constant returns (uint) {
-    return fundingProposals.proposals[proposal].bounty;
+  function getProposalInformation(string _proposal) constant returns (address, uint) {
+    proposal storage p = fundingProposals.proposals[_proposal];
+    return (p.initiator, p.bounty);
   }
 
 

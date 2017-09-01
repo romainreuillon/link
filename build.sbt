@@ -4,7 +4,7 @@ enablePlugins(ScalaJSPlugin)
 
 name := "link"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.3"
 
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 resolvers += "releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"
