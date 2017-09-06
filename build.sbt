@@ -23,7 +23,6 @@ libraryDependencies += "fr.iscpif" %%% "scaladget" % "0.9.6-SNAPSHOT"
 // This is an application with a main method
 scalaJSUseMainModuleInitializer := true
 
-
 val assemble = TaskKey[File]("assemble")
 
 assemble := {

@@ -23,6 +23,7 @@ import jdk.nashorn.api.scripting.JSObject
 import scala.scalajs.js
 import scala.scalajs.js._
 import org.scalajs.dom
+import stylesheet._
 
 import scalatags.JsDom.all._
 import rx._
@@ -32,86 +33,14 @@ import scaladget.stylesheet.all._
 import bs._
 import scaladget.tools.JsRxTags._
 import scala.scalajs.js.annotation.{JSGlobal, JSName}
+import LinkMapping._
 
 
-object Link extends js.JSApp {
-  //
-  //  @js.native
-  //  trait Transaction extends js.Object {
-  //    def verifySignature(): Boolean = js.native
-  //    def sign(privateKey: js.Array[Int]): Unit = js.native
-  //    def serialize(): js.Array[Int] = js.native
-  //  }
-  //
-  //  @js.native
-  //  trait Wallet extends js.Object {
-  //    def getAddressString(): String = js.native
-  //    def getPrivateKey(): js.Array[Int] = js.native
-  //  }
-
-
-  type CallBack[T] = js.Function2[js.Error, T, _]
-
-  @js.native
-  trait HttpProvider extends js.Object {
-
-  }
-
-  @js.native
-  trait Web3 extends js.Object {
-    def setProvider(provider: HttpProvider): Unit
-
-    def providers: Providers
-
-    def eth: Eth
-  }
-
-  @js.native
-  trait Providers extends js.Object {
-    def HttpProvider: js.Dynamic = js.native
-  }
-
-  @js.native
-  trait Eth extends js.Object {
-    def getBalance(address: String, defaultBlock: String | Number = js.native, callBack: CallBack[BigNumber] = js.native): BigNumber
-
-    def contract(abi: js.Dynamic): js.Dynamic
-
-    def accounts: js.Dynamic
-
-    def getAccounts(callBack: CallBack[js.Array[js.Dynamic]])
-
-    def sendTransaction(transactionObject: js.Dictionary[js.Any], callBack: CallBack[js.Dynamic] = js.native): js.Dynamic
-
-    def getBlock(id: String, callBack: CallBack[Block] = js.native): Block
-  }
-
-  @js.native
-  trait Block extends js.Object {
-    def hash: js.Dynamic
-
-    def number: Int
-  }
-
-  @js.native
-  trait BigNumber extends js.Object {
-    def toNumber(): Double
-
-    def toString(l: Int): String
-  }
-
-
-  @JSGlobal("uportconnect.Connect")
-  @js.native
-  class Connect(appName: String) extends js.Object {
-    def getWeb3(): Web3 = js.native
-  }
-
+object Link extends JSApp{
 
   def main(): Unit = {
     //
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
-
 
     //
     //    , (data: js.Dynamic) => {
@@ -291,10 +220,10 @@ object Link extends js.JSApp {
         )
 
       val showProposals = Var(false)
-      val proposeButton = bs.button("Propose", buttonStyle +++ btn_primary)(onclick := callPropose)
+      val proposeButton = bs.button("Propose", buttonStyle +++ btn_danger)(onclick := callPropose)
       val listProposals = Rx {
         span({if(showProposals()) "Hide" else "Show"} + " proposals",
-          buttonStyle +++ btn_primary)(onclick := {
+          buttonStyle +++ btn_default)(onclick := {
           () => {
             if (!showProposals.now) {
               queryContract()
@@ -330,9 +259,9 @@ object Link extends js.JSApp {
       val appTabs =
         Tabs().add(
           "Funder",
-          div(
+          span(
             // balanceButton, "balance: ", Rx(balanceValue()), br(),
-            proposeForm, proposeButton, br(),
+            proposeButton.expandOnclick(proposeForm),
             listProposals,
             proposalsText,
             a(href := "https://rinkeby.etherscan.io/address/" + contractAddress, target := "_blank", "contract transactions"), br(),
