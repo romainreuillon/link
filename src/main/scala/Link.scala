@@ -35,19 +35,19 @@ import scala.scalajs.js.annotation.{JSGlobal, JSName}
 
 
 object Link extends js.JSApp {
-//
-//  @js.native
-//  trait Transaction extends js.Object {
-//    def verifySignature(): Boolean = js.native
-//    def sign(privateKey: js.Array[Int]): Unit = js.native
-//    def serialize(): js.Array[Int] = js.native
-//  }
-//
-//  @js.native
-//  trait Wallet extends js.Object {
-//    def getAddressString(): String = js.native
-//    def getPrivateKey(): js.Array[Int] = js.native
-//  }
+  //
+  //  @js.native
+  //  trait Transaction extends js.Object {
+  //    def verifySignature(): Boolean = js.native
+  //    def sign(privateKey: js.Array[Int]): Unit = js.native
+  //    def serialize(): js.Array[Int] = js.native
+  //  }
+  //
+  //  @js.native
+  //  trait Wallet extends js.Object {
+  //    def getAddressString(): String = js.native
+  //    def getPrivateKey(): js.Array[Int] = js.native
+  //  }
 
 
   type CallBack[T] = js.Function2[js.Error, T, _]
@@ -60,7 +60,9 @@ object Link extends js.JSApp {
   @js.native
   trait Web3 extends js.Object {
     def setProvider(provider: HttpProvider): Unit
+
     def providers: Providers
+
     def eth: Eth
   }
 
@@ -72,22 +74,29 @@ object Link extends js.JSApp {
   @js.native
   trait Eth extends js.Object {
     def getBalance(address: String, defaultBlock: String | Number = js.native, callBack: CallBack[BigNumber] = js.native): BigNumber
+
     def contract(abi: js.Dynamic): js.Dynamic
+
     def accounts: js.Dynamic
+
     def getAccounts(callBack: CallBack[js.Array[js.Dynamic]])
+
     def sendTransaction(transactionObject: js.Dictionary[js.Any], callBack: CallBack[js.Dynamic] = js.native): js.Dynamic
+
     def getBlock(id: String, callBack: CallBack[Block] = js.native): Block
   }
 
   @js.native
   trait Block extends js.Object {
     def hash: js.Dynamic
+
     def number: Int
   }
 
   @js.native
   trait BigNumber extends js.Object {
     def toNumber(): Double
+
     def toString(l: Int): String
   }
 
@@ -100,36 +109,36 @@ object Link extends js.JSApp {
 
 
   def main(): Unit = {
-//
+    //
     implicit val ctx: Ctx.Owner = Ctx.Owner.safe()
 
 
-//
-//    , (data: js.Dynamic) => {
-//      // Get the necessary contract artifact file and instantiate it with truffle-contract.
-//      var AdoptionArtifact = data;
-//      App.contracts.Adoption = TruffleContract(AdoptionArtifact);
-//
-//      // Set the provider for our contract.
-//      App.contracts.Adoption.setProvider(App.web3Provider);
-//
-//      // Use our contract to retieve and mark the adopted pets.
-//      return App.markAdopted();
-//    });
+    //
+    //    , (data: js.Dynamic) => {
+    //      // Get the necessary contract artifact file and instantiate it with truffle-contract.
+    //      var AdoptionArtifact = data;
+    //      App.contracts.Adoption = TruffleContract(AdoptionArtifact);
+    //
+    //      // Set the provider for our contract.
+    //      App.contracts.Adoption.setProvider(App.web3Provider);
+    //
+    //      // Use our contract to retieve and mark the adopted pets.
+    //      return App.markAdopted();
+    //    });
 
     val proposeAddress = bs.input()(placeholder := "proposal ipfs adress", `type` := "text").render
     val proposeBounty = bs.input()(placeholder := "bounty", `type` := "number").render
 
-//    val web3 = Var[Option[Web3]] {
-//      None
-//    }
+    //    val web3 = Var[Option[Web3]] {
+    //      None
+    //    }
 
-//    def localWeb3 = {
-//      val web3 = js.Dynamic.newInstance(js.Dynamic.global.Web3)().asInstanceOf[Web3]
-//      val provider = js.Dynamic.newInstance(web3.providers.HttpProvider)("http://localhost:8545").asInstanceOf[HttpProvider]
-//      web3.setProvider(provider)
-//      web3
-//    }
+    //    def localWeb3 = {
+    //      val web3 = js.Dynamic.newInstance(js.Dynamic.global.Web3)().asInstanceOf[Web3]
+    //      val provider = js.Dynamic.newInstance(web3.providers.HttpProvider)("http://localhost:8545").asInstanceOf[HttpProvider]
+    //      web3.setProvider(provider)
+    //      web3
+    //    }
 
     dom.window.addEventListener("load", { (e: dom.Event) =>
       js.Dynamic.global.fetch("DataWards.json").then((_: js.Dynamic).json()).then { (abi: js.Dynamic) =>
@@ -155,21 +164,29 @@ object Link extends js.JSApp {
     })
 
     def startApp(web3: Web3, contractABI: js.Dynamic, contractAddress: String) {
-      val errorValue = Var[Option[Error]] { None }
-      val balanceValue = Var { "NA" }
+      val errorValue = Var[Option[Error]] {
+        None
+      }
+      val balanceValue = Var {
+        "NA"
+      }
 
       case class Proposal(address: String, initator: String, bounty: String)
 
-      val proposalsValue = Var[Vector[Proposal]] { Vector.empty }
-      val transactionValue = Var[Option[String]] { None }
+      val proposalsValue = Var[Vector[Proposal]] {
+        Vector.empty
+      }
+      val transactionValue = Var[Option[String]] {
+        None
+      }
 
       def defined[T](t: T) =
-        if(js.isUndefined(t)) None else Some(t)
+        if (js.isUndefined(t)) None else Some(t)
 
       def contract: js.Dynamic = web3.eth.contract(contractABI).at(contractAddress)
 
       def logError[T](error: Error)(f: => T): Unit = {
-        if(error != null) errorValue() = Some(error)
+        if (error != null) errorValue() = Some(error)
         else f
       }
 
@@ -198,9 +215,9 @@ object Link extends js.JSApp {
         def forLastBlock(error: js.Error, block: Block) = logError(error) {
           def defaultBlock = js.Dictionary[js.Any]("defaultBlock" -> block.hash)
 
-          def forEachProposal(error: js.Error, proposal: String)= logError(error) {
+          def forEachProposal(error: js.Error, proposal: String) = logError(error) {
 
-            def addProposal(error: js.Error, ret: js.Object)= logError(error) {
+            def addProposal(error: js.Error, ret: js.Object) = logError(error) {
               val initiator = js.Object.getOwnPropertyDescriptor(ret, "0").value
               val bounty = js.Object.getOwnPropertyDescriptor(ret, "1").value
 
@@ -213,7 +230,7 @@ object Link extends js.JSApp {
           }
 
           def forAllProposals(error: js.Error, numberOfProposals: js.Object) = logError(error) {
-            for { proposal <- 0L until BigInt(numberOfProposals.toString).longValue } {
+            for {proposal <- 0L until BigInt(numberOfProposals.toString).longValue} {
               contract.getProposal.call(proposal, defaultBlock, forEachProposal(_, _))
             }
           }
@@ -261,8 +278,8 @@ object Link extends js.JSApp {
 
       //    dom.document.body.appendChild(div(uploadWallet, password, br(), u(Rx(v()))).render)
 
-     val buttonStyle: ModifierSeq = Seq(
-       margin := 10
+      val buttonStyle: ModifierSeq = Seq(
+        margin := 10
       )
 
       val balanceButton = bs.button("Query Balance", buttonStyle +++ btn_primary)(onclick := queryBalance)
@@ -273,33 +290,55 @@ object Link extends js.JSApp {
           proposeBounty.withLabel("Bounty")
         )
 
+      val showProposals = Var(false)
       val proposeButton = bs.button("Propose", buttonStyle +++ btn_primary)(onclick := callPropose)
-      val listProposals = bs.button("List proposals", buttonStyle +++ btn_primary)(onclick := queryContract)
-
-      //val currentProposal = Var[Option[String]](None)
-
-      val proposalsText = Rx {
-        proposalsValue().map { proposal =>
-          div(
-            a(href := s"https://ipfs.iscpif.fr/ipfs/${proposal.address}", target := "_blank", proposal.address),
-            s": ${proposal.bounty} ETH", s", ${proposal.initator}", bs.button("expand").expandOnclick(div("Youpi", width := 200)), br())
-        }
+      val listProposals = Rx {
+        span({if(showProposals()) "Hide" else "Show"} + " proposals",
+          buttonStyle +++ btn_primary)(onclick := {
+          () => {
+            if (!showProposals.now) {
+              queryContract()
+            }
+            showProposals() = !showProposals.now
+          }
+        })
       }
+
+      val proposalsText = div(
+        Rx {
+          if (!showProposals()) div
+          else {
+            div(
+              Rx {
+                proposalsValue().foldLeft(bs.table.addHeaders("IPFS address", "Bounty", "Proposed by", "Details")) {
+                  (table, proposal) =>
+                    table.addRowElement(
+                      a(href := s"https://ipfs.isocpif.fr/ipfs/${proposal.address}", target := "_blank", proposal.address),
+                      span(s"${proposal.bounty} ETH"),
+                      span(s"${proposal.initator}"),
+                      bs.button("expand").expandOnclick(div("Youpi", width := 200))
+                    )
+                }.render(striped_table)
+              }
+            )
+          }
+        }
+      )
 
       val errorMessage: Rx[String] = errorValue.map(_.map(_.message).getOrElse("No error"))
 
       val appTabs =
-        Tabs(pills).add(
+        Tabs().add(
           "Funder",
           div(
             // balanceButton, "balance: ", Rx(balanceValue()), br(),
             proposeForm, proposeButton, br(),
-            listProposals, br(), proposalsText, br(),
-
+            listProposals,
+            proposalsText,
             a(href := "https://rinkeby.etherscan.io/address/" + contractAddress, target := "_blank", "contract transactions"), br(),
             "Error: ", Rx(errorMessage())
           )
-        ).add("Producer", div("Coucou")).render
+        ).add("Producer", div("Coucou")).render(pills)
 
 
       withBootstrapNative {
@@ -308,7 +347,6 @@ object Link extends js.JSApp {
 
     }
   }
-
 
 
   //    js.Dynamic.global.requirejs(
