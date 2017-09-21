@@ -242,7 +242,7 @@ object Link extends JSApp{
                 proposalsValue().foldLeft(bs.table.addHeaders("IPFS address", "Bounty", "Proposed by", "Details")) {
                   (table, proposal) =>
                     table.addRowElement(
-                      a(href := s"https://ipfs.isocpif.fr/ipfs/${proposal.address}", target := "_blank", proposal.address),
+                      a(href := s"https://ipfs.iscpif.fr/ipfs/${proposal.address}", target := "_blank", proposal.address),
                       span(s"${proposal.bounty} ETH"),
                       span(s"${proposal.initator}"),
                       bs.button("expand").expandOnclick(div("Youpi", width := 200))
@@ -261,7 +261,8 @@ object Link extends JSApp{
           "Funder",
           span(
             // balanceButton, "balance: ", Rx(balanceValue()), br(),
-            proposeButton.expandOnclick(proposeForm),
+            proposeButton,
+            proposeForm,
             listProposals,
             proposalsText,
             a(href := "https://rinkeby.etherscan.io/address/" + contractAddress, target := "_blank", "contract transactions"), br(),
