@@ -10,3 +10,4 @@ pom.xml
 *.DS_Store
 tags
 wallet/
+truffle/build
