@@ -1,10 +1,11 @@
 module.exports = {
   networks: {
-    /*development: {
+    development: {
       host: "localhost",
       port: 8545,
+      gas: 4712388, // from web3.eth.getBlock("pending").gasLimit
       network_id: "*" // Match any network id
-    }*/
+    },
     rinkeby: {
       host: "localhost", // Connect to geth on the specified
       port: 8545,
