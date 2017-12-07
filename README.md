@@ -9,7 +9,7 @@ It is still a very early stage :). To test it:
 ```
 sbt assemble
 cd truffle
-npm dev run
+npm run dev
 ```
 
 Now you can browse http://localhost:3000. You need a web3 enabled browser or metamask.
