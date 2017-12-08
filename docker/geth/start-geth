@@ -7,14 +7,20 @@ then
   pwgen -1 >"${PASSWORD}"
 fi
 
-
-if [[ `geth account list | wc -l` < 1 ]];
+if [[ $(geth --rinkeby account list | wc -l) -lt 1 ]];
 then
-  geth account new --password $PASSWORD
+  geth --rinkeby account new --password "${PASSWORD}"
 fi
 
 
-geth --rinkeby --syncmode light --password $PASSWORD --rpc --rpcapi 'web3,eth,debug' --rpccorsdomain "*"
+geth --rinkeby \
+     --syncmode fast \
+     --password "${PASSWORD}" \
+     --rpc \
+     --rpcapi 'net,web3,eth,debug' \
+     --networkid=4 \
+     --rpcaddr="0.0.0.0" \
+     --rpccorsdomain "*"
 #geth --testnet --password $PASSWORD 
 
 
