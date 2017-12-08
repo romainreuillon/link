@@ -27,8 +27,36 @@ truffle migrate --reset --network development
 
 ### Deploy the smart contract on Rinkeby test net:
 
+Start a `geth` node on *Rinkeby*
+
+```bash
+cd docker
+docker-compose up --build
+docker exec -it docker_geth_1 geth attach ipc://root/.ethereum/rinkeby/geth.ipc
 ```
-cd truffle
+
+You're now in a JavaScript console, you need to:
+ - retrieve your (newly created) account address
+ - get toy Ether from the *Rinkeby faucet*
+ - unlock your account to enable truffle to use it to deploy the smart contract
+
+```javascript
+var address = personal.listAccounts[0]
+address // copy paste this for rinkeby faucet
+```
+
+Visit [Rinkeby faucet](https://faucet.rinkeby.io/) and follow their instructions to make your address (previously copied) known to their service.
+Go back to your `geth` JavaScript console when done.
+
+```javascript
+eth.getBalance(address) // check you received the funds
+personal.unlockAccount(address)
+```
+
+Finally deploy the contract from a regular shell console:
+
+```bash
+cd ../truffle
 truffle migrate --reset --network rinkeby
 ```
 
@@ -39,4 +67,3 @@ truffle migrate --reset --network rinkeby
 Enjoy !
 
 The mid term plan is to fully map the [web3.js API](https://github.com/ethereum/wiki/wiki/JavaScript-API).
-
