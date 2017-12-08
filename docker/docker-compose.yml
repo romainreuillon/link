@@ -1,10 +1,10 @@
 version: "2.0"
 services:
-#  geth:
-#    build: ./geth
-#    volumes:
-#      - "./data/ethereum:/root/.ethereum"
-#    network_mode: "host"
+  geth:
+    build: ./geth
+    volumes:
+      - "./data/ethereum:/root/.ethereum"
+    network_mode: "host"
   http: 
     build: ./http
     volumes:  
