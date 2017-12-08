@@ -1,11 +1,10 @@
-
 #!/bin/bash 
 
 PASSWORD="/root/.ethereum/password"
 
-if [ ! -f $PASSWORD ]
+if [ ! -f "${PASSWORD}" ]
 then
-  echo pwgen -1 >$PASSWORD
+  pwgen -1 >"${PASSWORD}"
 fi
 
 
