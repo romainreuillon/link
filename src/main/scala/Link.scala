@@ -119,14 +119,16 @@ object Link extends JSApp{
         else f
       }
 
-      def queryBalance = () => {
-        web3.eth.getAccounts(querryAccounts)
+      val weiFactor = BigDecimal("1e18")
 
-        def querryAccounts(error: Error, accounts: js.Array[js.Dynamic]) = logError(error) {
+      def queryBalance = () => {
+        web3.eth.getAccounts(queryAccounts)
+
+        def queryAccounts(error: Error, accounts: js.Array[js.Dynamic]) = logError(error) {
           def add = defined(accounts).flatMap(_.headOption)
 
           def setBalance(error: js.Error, balance: BigNumber) = logError(error) {
-            balanceValue() = s"${balance.toNumber() / 1e18} RETH"
+            balanceValue() = s"${BigDecimal(balance.toNumber()) / weiFactor} ETH"
           }
 
           add match {
@@ -151,7 +153,7 @@ object Link extends JSApp{
               val bounty = js.Object.getOwnPropertyDescriptor(ret, "1").value
 
               proposalsValue.synchronized {
-                proposalsValue() = proposalsValue.now ++ Seq(Proposal(proposal.toString, initiator.toString, (BigInt(bounty.toString).toDouble / 1e18).toString))
+                proposalsValue() = proposalsValue.now ++ Seq(Proposal(proposal.toString, initiator.toString, (BigDecimal(bounty.toString) / weiFactor).toString))
               }
             }
 
@@ -159,8 +161,8 @@ object Link extends JSApp{
           }
 
           def forAllProposals(error: js.Error, numberOfProposals: js.Object) = logError(error) {
-            for {proposal <- 0L until BigInt(numberOfProposals.toString).longValue} {
-              contract.getProposal.call(proposal, defaultBlock, forEachProposal(_, _))
+            for {proposal <- BigInt(0) until BigInt(numberOfProposals.toString)} {
+              contract.getProposal.call(proposal.toString, defaultBlock, forEachProposal(_, _))
             }
           }
 
@@ -173,7 +175,7 @@ object Link extends JSApp{
       def callPropose = () => {
         val getData = contract.propose.getData(proposeAddress.value) //, proposeBounty.valueAsNumber)
 
-        val weis = (proposeBounty.value.toDouble * 1e18).toLong
+        val weis = (BigDecimal(proposeBounty.value) * weiFactor).toBigInt.toString
 
         val transaction =
           js.Dictionary[js.Any](
