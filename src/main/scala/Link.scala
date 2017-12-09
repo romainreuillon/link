@@ -28,7 +28,7 @@ import stylesheet._
 import scalatags.JsDom.all._
 import rx._
 
-import scaladget.api.{BootstrapTags => bs}
+import scaladget.api.{JSDependency, BootstrapTags => bs}
 import scaladget.stylesheet.all._
 import bs._
 import scaladget.tools.JsRxTags._
@@ -211,7 +211,7 @@ object Link extends JSApp{
         margin := 10
       )
 
-      val balanceButton = bs.button("Query Balance", buttonStyle +++ btn_primary)(onclick := queryBalance)
+      val balanceButton = button("Query Balance", buttonStyle +++ btn_primary)(onclick := queryBalance)
 
       val proposeForm =
         bs.vForm(width := 400)(
@@ -220,7 +220,7 @@ object Link extends JSApp{
         )
 
       val showProposals = Var(false)
-      val proposeButton = bs.button("Propose", buttonStyle +++ btn_danger)(onclick := callPropose)
+      val proposeButton = button("Propose", buttonStyle +++ btn_danger)(onclick := callPropose)
       val listProposals = Rx {
         span({if(showProposals()) "Hide" else "Show"} + " proposals",
           buttonStyle +++ btn_default)(onclick := {
@@ -245,7 +245,7 @@ object Link extends JSApp{
                       a(href := s"https://ipfs.iscpif.fr/ipfs/${proposal.address}", target := "_blank", proposal.address),
                       span(s"${proposal.bounty} ETH"),
                       span(s"${proposal.initator}"),
-                      bs.button("expand").expandOnclick(div("Youpi", width := 200))
+                      button("expand").expandOnclick(div("Youpi", width := 200))
                     )
                 }.render(striped_table)
               }
@@ -271,7 +271,7 @@ object Link extends JSApp{
         ).add("Producer", div("Coucou")).render(pills)
 
 
-      withBootstrapNative {
+      JSDependency.withBootstrapNative {
         div(padding := "10px")(appTabs).render
       }
 
